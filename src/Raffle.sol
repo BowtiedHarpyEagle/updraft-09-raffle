@@ -32,14 +32,20 @@ pragma solidity  ^0.8.18;
  */
 
 contract Raffle {
+    error Raffle__NotEnoughEthSent();
     uint256 private immutable i_entranceFee;
 
     constructor(uint256 _entranceFee) {
         i_entranceFee = _entranceFee;
     }
 
-    function enterRaffle()  public payable{
+    function enterRaffle()  external payable{
+        // require(msg.value >= i_entranceFee, "Raffle: insufficient entrance fee");
+        // don't use require, use revert with custom error, more gas efficient
         
+        if (msg.value < i_entranceFee) {
+            revert Raffle__NotEnoughEthSent();
+        }
     }
 
     function pickWinner() public {
