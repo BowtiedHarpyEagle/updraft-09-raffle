@@ -36,6 +36,10 @@ contract Raffle {
     uint256 private immutable i_entranceFee;
     address payable [] private s_players;
 
+    /** Events */
+
+    event EnteredRaffle(address indexed player);
+
     constructor(uint256 _entranceFee) {
         i_entranceFee = _entranceFee;
     }
@@ -49,6 +53,11 @@ contract Raffle {
         }
 
         s_players.push(payable(msg.sender)); // push new player to the players array
+        /** Whenever a storage variable is changed, it is best to emit an event because:
+         * 1) Makes migrations easier
+         * 2) Makes front end indexing easier
+         */
+        emit EnteredRaffle(msg.sender);
     }
     function pickWinner() public {
         
