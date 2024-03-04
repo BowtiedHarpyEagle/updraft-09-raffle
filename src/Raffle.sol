@@ -36,7 +36,12 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
-
+    error Raffle__Raffle__NotOpen();
+    /** Type declarations */
+    enum RaffleState { 
+        OPEN,
+        CALCULATING 
+    }
     /** Constants */
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint256 private immutable i_entranceFee;
@@ -50,6 +55,7 @@ contract Raffle is VRFConsumerBaseV2 {
     address payable [] private s_players;
     uint256 private s_lastTimestamp;
     address private s_recentWinner;
+    RaffleState private s_raffleState;
 
     /** Events */
 
@@ -67,6 +73,7 @@ contract Raffle is VRFConsumerBaseV2 {
         i_entranceFee = entranceFee;
         i_interval = interval;
         s_lastTimestamp = block.timestamp;
+        s_raffleState = RaffleState.OPEN;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
@@ -79,6 +86,10 @@ contract Raffle is VRFConsumerBaseV2 {
 
         if (msg.value < i_entranceFee) {
             revert Raffle__NotEnoughEthSent();
+        }
+
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle__Raffle__NotOpen();
         }
 
         s_players.push(payable(msg.sender)); // push new player to the players array
@@ -100,6 +111,8 @@ contract Raffle is VRFConsumerBaseV2 {
             revert();
         }
 
+        s_raffleState = RaffleState.CALCULATING;
+
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
@@ -117,6 +130,7 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
+        s_raffleState = RaffleState.OPEN;
         (bool success, ) = winner.call{value: address(this).balance}("");
 
         if (!success) {
