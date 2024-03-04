@@ -25,7 +25,7 @@
 pragma solidity  ^0.8.18;
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-
+import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 /**
  * @title A sample raffle contract 
  * @author Patrick Collins - Foundry full course 2023 - BowtiedHarpyEagle going through the course
@@ -33,7 +33,7 @@ import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interface
  * @dev Implements Chainlink VRFv2 for random number generation
  */
 
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthSent();
 
     /** Constants */
@@ -59,7 +59,8 @@ contract Raffle {
                 bytes32 gasLane, 
                 uint64 subscriptionId,
                 uint32 callbackGasLimit
-                )  
+
+                )  VRFConsumerBaseV2(vrfCoordinator)
     {
         i_entranceFee = entranceFee;
         i_interval = interval;
@@ -105,6 +106,13 @@ contract Raffle {
             NUM_WORDS
         );
 
+    }
+
+    function fulfillRandomWords (
+        uint256 requestId,
+        uint256 randomWords
+    ) internal override {
+        
     }
         
     /** Getter functions */
