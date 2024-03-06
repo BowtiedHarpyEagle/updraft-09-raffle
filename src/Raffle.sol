@@ -37,11 +37,15 @@ contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughEthSent();
     error Raffle__TransferFailed();
     error Raffle__Raffle__NotOpen();
-    error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 numPlayers, uint256 rafleState);
+    error Raffle__UpkeepNotNeeded(
+        uint256 currentBalance,
+        uint256 numPlayers,
+        uint256 rafleState
+    );
     /** Type declarations */
-    enum RaffleState { 
+    enum RaffleState {
         OPEN,
-        CALCULATING 
+        CALCULATING
     }
     /** Constants */
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
@@ -53,7 +57,7 @@ contract Raffle is VRFConsumerBaseV2 {
     bytes32 private immutable i_gasLane;
     uint64 private immutable i_subscriptionId;
     uint32 private immutable i_callbackGasLimit;
-    address payable [] private s_players;
+    address payable[] private s_players;
     uint256 private s_lastTimestamp;
     address private s_recentWinner;
     RaffleState private s_raffleState;
@@ -61,17 +65,16 @@ contract Raffle is VRFConsumerBaseV2 {
     /** Events */
 
     event EnteredRaffle(address indexed player);
-    event PickedWinner (address indexed winner);
+    event PickedWinner(address indexed winner);
 
-    constructor(uint256 entranceFee, 
-                uint256 interval, 
-                address vrfCoordinator, 
-                bytes32 gasLane, 
-                uint64 subscriptionId,
-                uint32 callbackGasLimit
-
-                )  VRFConsumerBaseV2(vrfCoordinator)
-    {
+    constructor(
+        uint256 entranceFee,
+        uint256 interval,
+        address vrfCoordinator,
+        bytes32 gasLane,
+        uint64 subscriptionId,
+        uint32 callbackGasLimit
+    ) VRFConsumerBaseV2(vrfCoordinator) {
         i_entranceFee = entranceFee;
         i_interval = interval;
         s_lastTimestamp = block.timestamp;
@@ -82,7 +85,7 @@ contract Raffle is VRFConsumerBaseV2 {
         i_callbackGasLimit = callbackGasLimit;
     }
 
-    function enterRaffle()  external payable{
+    function enterRaffle() external payable {
         // require(msg.value >= i_entranceFee, "Raffle: insufficient entrance fee");
         // don't use require, use revert with custom error, more gas efficient
 
@@ -101,40 +104,40 @@ contract Raffle is VRFConsumerBaseV2 {
          */
         emit EnteredRaffle(msg.sender);
     }
-    //When the winner is supposed to be picked? 
+
+    //When the winner is supposed to be picked?
     /**
-     * @dev checkUpkeep is the function that the Chainlink Automation nodes call 
+     * @dev checkUpkeep is the function that the Chainlink Automation nodes call
      * to see if it is time to perform an upkeep.
      * 1. Time interval has passed between raffle runs
      * 2. The raffle is in the Open state
      * 3. The contract has ETH in it, there are players in the raffle
      * 4. (Implicitly) The subscription is funded by LINK
      */
-    function checkUpkeep (
+    function checkUpkeep(
         bytes memory /*checkData*/
-    ) public view  returns (bool upkeepNeeded, bytes memory /*performData*/){
-         bool timeHasPassed = (block.timestamp - s_lastTimestamp >= i_interval) ;
-         bool isOpen = s_raffleState == RaffleState.OPEN;
-         bool hasBalance = address(this).balance > 0;
-         bool hasPlayers = s_players.length > 0;
-         upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
-         return (upkeepNeeded, /*performData*/"0x0");
+    ) public view returns (bool upkeepNeeded, bytes memory /*performData*/) {
+        bool timeHasPassed = (block.timestamp - s_lastTimestamp >= i_interval);
+        bool isOpen = s_raffleState == RaffleState.OPEN;
+        bool hasBalance = address(this).balance > 0;
+        bool hasPlayers = s_players.length > 0;
+        upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
+        return (upkeepNeeded, /*performData*/ "0x0");
     }
-    
-
     /** 1. Get a random number
      *  2. Pick a winner
      *  3. Get called automatically at a certain time
-      */
-    function performUpkeep(bytes calldata /* performData */)external {
+     */
+    function performUpkeep(bytes calldata /* performData */) external {
         // Check if enough time has passed
         (bool upkeepNeeded, ) = checkUpkeep("");
 
         if (!upkeepNeeded) {
             revert Raffle__UpkeepNotNeeded(
-                address(this).balance, 
+                address(this).balance,
                 s_players.length,
-                uint256(s_raffleState));
+                uint256(s_raffleState)
+            );
         }
 
         if (block.timestamp - s_lastTimestamp < i_interval) {
@@ -150,14 +153,12 @@ contract Raffle is VRFConsumerBaseV2 {
             i_callbackGasLimit,
             NUM_WORDS
         );
-
     }
 
-    function fulfillRandomWords (
+    function fulfillRandomWords(
         // uint256 requestId,
         uint256[] memory randomWords
     ) internal override {
-
         //Checks
         //Effects
 
@@ -169,23 +170,24 @@ contract Raffle is VRFConsumerBaseV2 {
         s_players = new address payable[](0);
         s_lastTimestamp = block.timestamp;
         emit PickedWinner(winner);
-        
+
         //Interactions
-        
+
         (bool success, ) = winner.call{value: address(this).balance}("");
 
         if (!success) {
             revert Raffle__TransferFailed();
         }
-
-        
-
-        
     }
-        
+
     /** Getter functions */
 
-    function getEntranceFee() public view returns(uint256) {
+    function getEntranceFee() public view returns (uint256) {
         return i_entranceFee;
     }
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal virtual override {}
 }
