@@ -122,7 +122,7 @@ contract Raffle is VRFConsumerBaseV2 {
         bool hasBalance = address(this).balance > 0;
         bool hasPlayers = s_players.length > 0;
         upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
-        return (upkeepNeeded, /*performData*/ "0x0");
+        return (upkeepNeeded, "0x0");
     }
     /** 1. Get a random number
      *  2. Pick a winner
@@ -156,7 +156,7 @@ contract Raffle is VRFConsumerBaseV2 {
     }
 
     function fulfillRandomWords(
-        // uint256 requestId,
+        uint256 /* requestId */, 
         uint256[] memory randomWords
     ) internal override {
         //Checks
@@ -185,9 +185,4 @@ contract Raffle is VRFConsumerBaseV2 {
     function getEntranceFee() public view returns (uint256) {
         return i_entranceFee;
     }
-
-    function fulfillRandomWords(
-        uint256 requestId,
-        uint256[] memory randomWords
-    ) internal virtual override {}
 }
