@@ -7,6 +7,8 @@ import {Raffle} from "../src/Raffle.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
+import {CreateSubscription} from "./Interactions.s.sol";
+
 contract DeployRaffle is Script {
 
     function run() external returns(Raffle, HelperConfig) {
@@ -21,7 +23,8 @@ contract DeployRaffle is Script {
 
         if (subscriptionId == 0) {
             //set subscription id
-            
+            CreateSubscription createSubscription = new CreateSubscription();
+            subscriptionId = createSubscription.createSubscription(vrfCoordinator);
         }
 
         vm.startBroadcast();
